@@ -1,170 +1,101 @@
-import mongoose from 'mongoose';
-import blogModel from '../models/blogModel.js';
 import userModel from '../models/userModel.js';
+import bcrypt from 'bcrypt';
 
-// GET ALL BLOGS
-export const getAllBlogsController = async (req, res) => {
+// Create user register user
+export const registerController = async (req, res) => {
   try {
-    const blogs = await blogModel.find({}).populate('user');
-    if (!blogs) {
-      return res.status(200).send({
+    const { username, email, password } = req.body;
+    // Validation
+    if (!username || !email || !password) {
+      return res.status(400).send({
         success: false,
-        message: 'No Blogs Found',
+        message: 'Please Fill all fields',
       });
     }
-    return res.status(200).send({
+    // Existing user
+    const exisitingUser = await userModel.findOne({ email });
+    if (exisitingUser) {
+      return res.status(401).send({
+        success: false,
+        message: 'User already exists',
+      });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Save new user
+    const user = new userModel({ username, email, password: hashedPassword });
+    await user.save();
+    return res.status(201).send({
       success: true,
-      BlogCount: blogs.length,
-      message: 'All Blogs lists',
-      blogs,
+      message: 'New User Created',
+      user,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      message: 'Error In Register callback',
+      success: false,
+      error,
+    });
+  }
+};
+
+// Get all users
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await userModel.find({});
+    return res.status(200).send({
+      userCount: users.length,
+      success: true,
+      message: 'All users data',
+      users,
     });
   } catch (error) {
     console.log(error);
     return res.status(500).send({
       success: false,
-      message: 'Error WHile Getting Blogs',
+      message: 'Error In Get All Users',
       error,
     });
   }
 };
 
-// Create Blog
-export const createBlogController = async (req, res) => {
+// Login
+export const loginController = async (req, res) => {
   try {
-    const { title, description, image, user } = req.body;
-    // validation
-    if (!title || !description || !image || !user) {
-      return res.status(400).send({
+    const { email, password } = req.body;
+    // Validation
+    if (!email || !password) {
+      return res.status(401).send({
         success: false,
-        message: 'Please Provide ALl Fields',
+        message: 'Please provide email or password',
       });
     }
-    const exisitingUser = await userModel.findById(user);
-    // validation
-    if (!exisitingUser) {
-      return res.status(404).send({
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(200).send({
         success: false,
-        message: 'unable to find user',
+        message: 'Email is not registered',
       });
     }
-
-    const newBlog = new blogModel({ title, description, image, user });
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    await newBlog.save({ session });
-    exisitingUser.blogs.push(newBlog);
-    await exisitingUser.save({ session });
-    await session.commitTransaction();
-    await newBlog.save();
-    return res.status(201).send({
-      success: true,
-      message: 'Blog Created!',
-      newBlog,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send({
-      success: false,
-      message: 'Error WHile Creting blog',
-      error,
-    });
-  }
-};
-
-// Update Blog
-export const updateBlogController = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, description, image } = req.body;
-    const blog = await blogModel.findByIdAndUpdate(
-      id,
-      { ...req.body },
-      { new: true }
-    );
-    return res.status(200).send({
-      success: true,
-      message: 'Blog Updated!',
-      blog,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send({
-      success: false,
-      message: 'Error WHile Updating Blog',
-      error,
-    });
-  }
-};
-
-// Single Blog
-export const getBlogByIdController = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const blog = await blogModel.findById(id);
-    if (!blog) {
-      return res.status(404).send({
+    // Password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).send({
         success: false,
-        message: 'blog not found with this is',
+        message: 'Invalid username or password',
       });
     }
     return res.status(200).send({
       success: true,
-      message: 'fetch single blog',
-      blog,
+      message: 'Login successfully',
+      user,
     });
   } catch (error) {
     console.log(error);
-    return res.status(400).send({
+    return res.status(500).send({
       success: false,
-      message: 'error while getting single blog',
-      error,
-    });
-  }
-};
-
-// Delete Blog
-export const deleteBlogController = async (req, res) => {
-  try {
-    const blog = await blogModel
-      .findByIdAndDelete(req.params.id)
-      .populate('user');
-    await blog.user.blogs.pull(blog);
-    await blog.user.save();
-    return res.status(200).send({
-      success: true,
-      message: 'Blog Deleted!',
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send({
-      success: false,
-      message: 'Erorr WHile Deleteing BLog',
-      error,
-    });
-  }
-};
-
-// GET USER BLOG
-export const userBlogControlller = async (req, res) => {
-  try {
-    const userBlog = await userModel.findById(req.params.id).populate('blogs');
-
-    if (!userBlog) {
-      return res.status(404).send({
-        success: false,
-        message: 'blogs not found with this id',
-      });
-    }
-    return res.status(200).send({
-      success: true,
-      message: 'user blogs',
-      userBlog,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).send({
-      success: false,
-      message: 'error in user blog',
+      message: 'Error In Login callback',
       error,
     });
   }
