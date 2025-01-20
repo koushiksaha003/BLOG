@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "blog app",
   "main": "server.js",
+   "type": "module",
   "scripts": {
     "start": "node serevr.js",
     "server": "nodemon server.js",
