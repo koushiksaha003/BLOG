@@ -3,7 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import colors from 'colors';
 import dotenv from 'dotenv';
-import connectDB from './config/db';
+import connectDB from './config/db.js';
 import path from 'path';
 import userRoutes from './routes/userRoutes';
 import blogRoutes from './routes/blogRoutes';
