@@ -5,8 +5,8 @@ import colors from 'colors';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import path from 'path';
-import userRoutes from './routes/userRoutes';
-import blogRoutes from './routes/blogRoutes';
+import userRoutes from './routes/userRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
 
 //env config
 dotenv.config();
