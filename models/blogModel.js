@@ -1,23 +1,23 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
 const blogSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      require: [true, "title is required"],
+      required: [true, "title is required"],
     },
     description: {
       type: String,
-      required: [true, "description is require"],
+      required: [true, "description is required"],
     },
     image: {
       type: String,
-      required: [true, "image is require"],
+      required: [true, "image is required"],
     },
     user: {
       type: mongoose.Types.ObjectId,
       ref: "User",
-      require: [true, "user id is required"],
+      required: [true, "user id is required"],
     },
   },
   { timestamps: true }
@@ -25,4 +25,4 @@ const blogSchema = new mongoose.Schema(
 
 const blogModel = mongoose.model("Blog", blogSchema);
 
-module.exports = blogModel;
+export default blogModel;
